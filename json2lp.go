@@ -57,29 +57,6 @@ func printColumnNames(data JSONinput) {
 }
 
 func ProcessJSON(input JSONinput, defs map[string]string) []ProcessedJSON {
-	// direct columns to their appropriate types
-	// i := 0
-
-	// var timeIndex int
-	// tags := make(map[string]int)
-	// fields := make(map[string]int)
-
-	// // rework
-	// for k, v := range defs {
-	// 	switch v {
-	// 	case "timestamp":
-	// 		timeIndex = i
-	// 	case "tag":
-	// 		tags[k] = i
-	// 	case "field":
-	// 		fields[k] = i
-	// 	case "ignore":
-	// 	}
-	// 	fmt.Println(k,v)
-	// 	i++
-	// }
-
-	
 
 	// map data to the right types for writing
 	var output []ProcessedJSON
@@ -95,31 +72,30 @@ func ProcessJSON(input JSONinput, defs map[string]string) []ProcessedJSON {
 					timeIndex = i
 				case "tag":
 					tags[k] = i
-					fmt.Printf("setting tags[%s]=%d",k,i)
 				case "field":
 					fields[k] = i
 				case "ignore":
 				}
-				
-				fmt.Println(k,i,defs[k])
 			}
-			fmt.Printf("%+v %+v %+v\n",timeIndex,tags,fields)
 			for _, row := range ser.Values {
 				value := ProcessedJSON{
 					Measurement: "",
 					Tags:        make(map[string]string),
 					Fields:      make(map[string]interface{}),
 				}
+
+				//value.Measurement
 				value.Measurement = ser.Name
-				
-				unixTime,_:=row[timeIndex].(int64)
-				fmt.Println("Time stuff:",timeIndex,unixTime)
-				value.Timestamp = time.Unix(int64(unixTime),0) //todo: convert timestamp as appropriate
-				//value.Tag
+
+				//value.Timestamp
+				unixTime,_:=row[timeIndex].(float64)
+				value.Timestamp = time.Unix(0,int64(unixTime)) 
+
+				//value.Tags
 				for k, i := range tags {
 					value.Tags[k], _ = row[i].(string)
 				}
-				//value.Field
+				//value.Fields
 				for k, i := range fields {
 					value.Fields[k], _ = row[i].(float64)
 				}
@@ -157,7 +133,7 @@ func DumpToInflux(data []ProcessedJSON) {
 		os.Exit(1)
 	}
 	client := influxdb2.NewClientWithOptions(fmt.Sprintf("http://%s:8086", influxIP), "my-token", influxdb2.DefaultOptions().SetBatchSize(20))
-	writeAPI := client.WriteAPI("myorg", "hpwc")
+	writeAPI := client.WriteAPI("admin", "tesla")
 
 	// The way this is set up, these likely don't get executed on ^C.
 	defer client.Close()
@@ -198,10 +174,6 @@ func main() {
 		panic(err)
 	}
 
-	// fmt.Printf("%sUseful details about JSON input:%s\n", colorGreen, colorReset)
-	// fmt.Printf("%s\tActual Data:%s %+v\n", colorGreen, colorReset, data1)
-	// printColumnNames(data1)
-
 	filename2 := args[1]
 
 	file2, err := os.ReadFile(filename2)
@@ -217,5 +189,6 @@ func main() {
 	}
 
 	output := ProcessJSON(data1, data2)
-	fmt.Printf("%+v", output)
+	DumpToInflux(output)
+	//fmt.Printf("%+v", output)
 }
