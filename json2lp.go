@@ -12,8 +12,6 @@ import (
 
 type JSONinput struct {
 	Results []Result `json:"results"`
-	// Page   int      `json:"page"`
-	// Fruits []string `json:"fruits"`
 }
 
 type Result struct {
@@ -65,6 +63,7 @@ func ProcessJSON(input JSONinput, defs map[string]string) []ProcessedJSON {
 			var timeIndex int
 			tags := make(map[string]int)
 			fields := make(map[string]int)
+			
 			// map definitions to columns
 			for i, k := range ser.Columns {
 				switch defs[k] {
@@ -118,12 +117,11 @@ func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON, counter int) {
 		data.Timestamp)
 
 	client.WritePoint(p)
-	// Output a dot (.) for every successful write to influx
+
 	// This helps people like me who need to see something to know it works
 	if counter%1000 == 0 {
 		fmt.Printf("%d records uploaded @ %d:%d:%d, latest record: %+v\n", counter, time.Now().Hour(), time.Now().Minute(), time.Now().Second(), data)
 	}
-	//fmt.Printf(".")
 }
 
 // DumpToInflux loops through all the data you send it and writes all
