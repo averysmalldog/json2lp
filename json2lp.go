@@ -19,16 +19,36 @@ type Result struct {
 type Series struct {
 	Name string `json:"name"`
 	Columns []string `json:"columns"`
-	Values []interface{} `json:"values"`
+	Values [][]interface{} `json:"values"`
 }
 
 // type Value struct {
 // 	Data []interface{}
 // }
 
+func printColumnNames (data JSONinput) {
+	for i, res := range data.Results {
+		fmt.Printf("Result %d:\n",i)
+		for j, ser := range res.Series {
+			fmt.Printf("\tSeries %d (Table \"%s\"):\n",j,ser.Name)
+			for k, col := range ser.Columns {
+				fmt.Printf("\t\tColumn %d: %v\n",k,col)
+			}
+			for l, val := range ser.Values {
+				fmt.Printf("\t\tValue %d:\n",l)
+				for m, meas := range val {
+					fmt.Println("\t\t\t",ser.Columns[m],"=",meas)
+					// fmt.Printf("\t\t\tMeasurement %d: %+v\n",m, meas)
+				}
+			}
+		}
+	}
+}
+
 func main() {
 	colorReset := "\033[0m"
 	colorGreen := "\033[32m"
+	colorRed := "\033[31m"
 
 	args := os.Args[1:]
 
@@ -43,6 +63,7 @@ func main() {
 
 	file, err := os.ReadFile(filename)
 	if err != nil {
+		fmt.Println(string(colorRed),err,string(colorReset))
 		os.Exit(1)
 	}
 
@@ -52,26 +73,7 @@ func main() {
         panic(err)
     }
     // fmt.Println(data)
-	fmt.Println(len(data.Results[0].Series[0].Values))
-	// file, err := os.Open(filename)
-	// if err != nil {
-	// 	fmt.Println("Something went wrong opening the file:", err)
-	// 	os.Exit(1)
-	// } else {
-	// 	defer file.Close()
-	// 	reader := csv2lp.CsvToLineProtocol(file)
-	// 	buffer := make([]byte, 1024)
-	// 	for {
-	// 		n, e := reader.Read(buffer)
-	// 		if e != nil {
-	// 			if e == io.EOF {
-	// 				break
-	// 			} else {
-	// 				fmt.Println("Error:", e)
-	// 				break
-	// 			}
-	// 		}
-	// 		fmt.Print(string(buffer[:n]))
-	// 	}
-	// }
+	fmt.Printf("%sUseful details about JSON input:%s\n", colorGreen, colorReset)
+	fmt.Printf("%s\tActual Data:%s %+v\n", colorGreen, colorReset, data)
+	printColumnNames(data)
 }
