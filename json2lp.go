@@ -27,10 +27,10 @@ type Series struct {
 }
 
 type ProcessedJSON struct {
-	Measurement string `json:"measurement"`
-	Tags map[string]string `json:"tags"`
-	Fields map[string]interface{} `json:"fields"`
-	Timestamp time.Time `json:"timestamp"`
+	Measurement string                 `json:"measurement"`
+	Tags        map[string]string      `json:"tags"`
+	Fields      map[string]interface{} `json:"fields"`
+	Timestamp   time.Time              `json:"timestamp"`
 }
 
 // type Value struct {
@@ -56,6 +56,80 @@ func printColumnNames(data JSONinput) {
 	}
 }
 
+func ProcessJSON(input JSONinput, defs map[string]string) []ProcessedJSON {
+	// direct columns to their appropriate types
+	// i := 0
+
+	// var timeIndex int
+	// tags := make(map[string]int)
+	// fields := make(map[string]int)
+
+	// // rework
+	// for k, v := range defs {
+	// 	switch v {
+	// 	case "timestamp":
+	// 		timeIndex = i
+	// 	case "tag":
+	// 		tags[k] = i
+	// 	case "field":
+	// 		fields[k] = i
+	// 	case "ignore":
+	// 	}
+	// 	fmt.Println(k,v)
+	// 	i++
+	// }
+
+	
+
+	// map data to the right types for writing
+	var output []ProcessedJSON
+	for _, res := range input.Results {
+		for _, ser := range res.Series {
+			var timeIndex int
+			tags := make(map[string]int)
+			fields := make(map[string]int)
+			// map definitions to columns
+			for i, k := range ser.Columns {
+				switch defs[k] {
+				case "timestamp":
+					timeIndex = i
+				case "tag":
+					tags[k] = i
+					fmt.Printf("setting tags[%s]=%d",k,i)
+				case "field":
+					fields[k] = i
+				case "ignore":
+				}
+				
+				fmt.Println(k,i,defs[k])
+			}
+			fmt.Printf("%+v %+v %+v\n",timeIndex,tags,fields)
+			for _, row := range ser.Values {
+				value := ProcessedJSON{
+					Measurement: "",
+					Tags:        make(map[string]string),
+					Fields:      make(map[string]interface{}),
+				}
+				value.Measurement = ser.Name
+				
+				unixTime,_:=row[timeIndex].(int64)
+				fmt.Println("Time stuff:",timeIndex,unixTime)
+				value.Timestamp = time.Unix(int64(unixTime),0) //todo: convert timestamp as appropriate
+				//value.Tag
+				for k, i := range tags {
+					value.Tags[k], _ = row[i].(string)
+				}
+				//value.Field
+				for k, i := range fields {
+					value.Fields[k], _ = row[i].(float64)
+				}
+				output = append(output, value)
+			}
+		}
+	}
+	return output
+}
+
 // WriteOne writes a single JSON measurement to InfluxDB with
 // an aync, non-blocking client you supply.
 func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON) {
@@ -66,16 +140,15 @@ func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON) {
 		data.Tags,
 		data.Fields,
 		data.Timestamp)
-		
+
 	client.WritePoint(p)
 	// Output a dot (.) for every successful write to influx
 	// This helps people like me who need to see something to know it works
 	fmt.Printf(".")
 }
 
-// DumpToInflux simply runs the totality of polly in your program. It is
-// recommended you run this as a goroutine so your program can do
-// other things.
+// DumpToInflux loops through all the data you send it and writes all
+// the points to Influx.
 func DumpToInflux(data []ProcessedJSON) {
 	influxIP, ok := os.LookupEnv("INFLUX_IP")
 	if !ok {
@@ -104,28 +177,45 @@ func main() {
 
 	args := os.Args[1:]
 
-	if len(args) < 1 {
+	if len(args) < 2 {
 		fmt.Println(string(colorGreen), "json2lp v0.0.1", string(colorReset))
 		fmt.Println("--------------")
 		fmt.Println("\nConvert JSON as exported via Flux/InfluxDB to InfluxDB line protocol.")
-		fmt.Println("\nSyntax: json2lp <json-file-name>")
+		fmt.Println("\nSyntax: json2lp <json-file-name> <definitions-file-name>")
 		os.Exit(0)
 	}
-	filename := args[0]
+	filename1 := args[0]
 
-	file, err := os.ReadFile(filename)
+	file1, err := os.ReadFile(filename1)
 	if err != nil {
 		fmt.Println(string(colorRed), err, string(colorReset))
 		os.Exit(1)
 	}
 
-	var data JSONinput
+	var data1 JSONinput
 
-	if err := json.Unmarshal(file, &data); err != nil {
+	if err := json.Unmarshal(file1, &data1); err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("%sUseful details about JSON input:%s\n", colorGreen, colorReset)
-	fmt.Printf("%s\tActual Data:%s %+v\n", colorGreen, colorReset, data)
-	printColumnNames(data)
+	// fmt.Printf("%sUseful details about JSON input:%s\n", colorGreen, colorReset)
+	// fmt.Printf("%s\tActual Data:%s %+v\n", colorGreen, colorReset, data1)
+	// printColumnNames(data1)
+
+	filename2 := args[1]
+
+	file2, err := os.ReadFile(filename2)
+	if err != nil {
+		fmt.Println(string(colorRed), err, string(colorReset))
+		os.Exit(1)
+	}
+
+	var data2 map[string]string
+
+	if err := json.Unmarshal(file2, &data2); err != nil {
+		panic(err)
+	}
+
+	output := ProcessJSON(data1, data2)
+	fmt.Printf("%+v", output)
 }

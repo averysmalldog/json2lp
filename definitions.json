@@ -1,0 +1,10 @@
+{
+    "time": "timestamp",
+    "consumption": "field",
+    "endpoint_id": "tag",
+    "endpoint_type": "tag",
+    "interval": "ignore",
+    "msg_type": "tag",
+    "outage": "ignore",
+    "protocol": "tag"
+}
