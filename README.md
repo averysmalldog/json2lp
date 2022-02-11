@@ -5,7 +5,7 @@ Reads JSON outputs from Influx 1.x queries, parses this data into individual dat
 
 ## How To Use This
 1. Run `make build` to build the binary for your system
-2. Supply a JSON output of an Influx query (e.g. something like `influx -host 192.168.86.32 -database tesla -format json -execute "select * from utilities" > utilities-backup-2022-01-24.json`) This is a somewhat tricky step because this particular incantation require InfluxDB 1.x (1.9.6 works fine)
+2. Supply a JSON output of an Influx query (e.g. something like `influx -host 192.168.86.32 -database tesla -format json -execute "select * from utilities" > utilities-backup-2022-01-24.json`) This is a somewhat tricky step because this particular incantation requires InfluxDB 1.x (1.9.6 works fine)
 3. Modify `definitions.json` to set rules for the columns in the output of your query. The keys should match the column names from the output, and the values are what you set. Your options are `timestamp` (only one column is allowed!), `tag`, `field`, or `ignore`.
 4. Supply an IP address for your Influx server by exporting it as an env var (e.g. `export INFLUX_IP="192.168.1.23"`)
 5. Run the executable:
@@ -83,3 +83,9 @@ This is a sampling of what actual result data from an influx query looks like in
 ```
 
 This represents 4 data points in a single table within a series called "utilites". `json2lp` will extract the series name(s) but is currently only capable of dealing with a single schema - it will apply your `definitions.json` mappings to all series.
+
+## To-Do List
+[] Speed up Influx writes using buffering/batching/whatever (go as fast as the server can take it)
+[] Try outputting the 10MB max of actual line protocol as another way to pour data in
+[] Tighten up the interface (guardrails, self-descriptive instructions)
+[] Tighten up the docs
