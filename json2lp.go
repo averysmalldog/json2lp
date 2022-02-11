@@ -108,7 +108,7 @@ func ProcessJSON(input JSONinput, defs map[string]string) []ProcessedJSON {
 
 // WriteOne writes a single JSON measurement to InfluxDB with
 // an aync, non-blocking client you supply.
-func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON) {
+func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON, counter int) {
 	client := *writeAPI
 
 	p := influxdb2.NewPoint(
@@ -120,6 +120,9 @@ func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON) {
 	client.WritePoint(p)
 	// Output a dot (.) for every successful write to influx
 	// This helps people like me who need to see something to know it works
+	if counter % 1000 == 0 {
+		fmt.Printf("%d records uploaded @ %d:%d:%d, latest record: %+v\n", counter, time.Now().Hour(),time.Now().Minute(),time.Now().Second(), data)
+	}
 	//fmt.Printf(".")
 }
 
@@ -140,9 +143,9 @@ func DumpToInflux(data []ProcessedJSON) {
 	defer writeAPI.Flush()
 
 	// Simple, isn't it?
-	for _, point := range data {
-		go WriteOne(&writeAPI, point)
-		//time.Sleep(time.Millisecond * 1)
+	for i, point := range data {
+		go WriteOne(&writeAPI, point, i)
+		time.Sleep(time.Millisecond * 1)
 	}
 }
 
