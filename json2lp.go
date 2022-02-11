@@ -88,8 +88,8 @@ func ProcessJSON(input JSONinput, defs map[string]string) []ProcessedJSON {
 				value.Measurement = ser.Name
 
 				//value.Timestamp
-				unixTime,_:=row[timeIndex].(float64)
-				value.Timestamp = time.Unix(0,int64(unixTime)) 
+				unixTime, _ := row[timeIndex].(float64)
+				value.Timestamp = time.Unix(0, int64(unixTime))
 
 				//value.Tags
 				for k, i := range tags {
@@ -120,8 +120,8 @@ func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON, counter int) {
 	client.WritePoint(p)
 	// Output a dot (.) for every successful write to influx
 	// This helps people like me who need to see something to know it works
-	if counter % 1000 == 0 {
-		fmt.Printf("%d records uploaded @ %d:%d:%d, latest record: %+v\n", counter, time.Now().Hour(),time.Now().Minute(),time.Now().Second(), data)
+	if counter%1000 == 0 {
+		fmt.Printf("%d records uploaded @ %d:%d:%d, latest record: %+v\n", counter, time.Now().Hour(), time.Now().Minute(), time.Now().Second(), data)
 	}
 	//fmt.Printf(".")
 }
