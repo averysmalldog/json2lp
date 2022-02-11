@@ -120,7 +120,7 @@ func WriteOne(writeAPI *api.WriteAPI, data ProcessedJSON) {
 	client.WritePoint(p)
 	// Output a dot (.) for every successful write to influx
 	// This helps people like me who need to see something to know it works
-	fmt.Printf(".")
+	//fmt.Printf(".")
 }
 
 // DumpToInflux loops through all the data you send it and writes all
@@ -142,7 +142,7 @@ func DumpToInflux(data []ProcessedJSON) {
 	// Simple, isn't it?
 	for _, point := range data {
 		go WriteOne(&writeAPI, point)
-		time.Sleep(time.Millisecond * 10)
+		//time.Sleep(time.Millisecond * 1)
 	}
 }
 
